@@ -1,0 +1,16 @@
+FROM mysql:8.0
+
+# Ensure UTF-8 defaults for AdventureWorks data
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    MYSQL_ROOT_PASSWORD=adventureworks \
+    MYSQL_DATABASE=adventureworks_master_data \
+    MYSQL_USER=adventureworks \
+    MYSQL_PASSWORD=adventureworks
+
+# Copy data and scripts
+COPY init/ /init/
+RUN chown -R mysql:mysql /init/data/mysql && chmod -R 755 /init/data/mysql
+COPY init/scripts/mysql/*.sql /docker-entrypoint-initdb.d/
+
+
