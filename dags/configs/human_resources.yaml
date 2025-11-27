@@ -1,0 +1,41 @@
+general:
+  is_disabled: false
+  schedule_interval: "0 0 * * *"
+
+  source_configs:
+    source_type: mysql
+    conn_id: human_resources        
+    schema_name: human_resources    
+
+  gcp_configs:
+    gcp_conn_id: gcp                
+    gcs_bucket_name: adventure-works-landing
+    gcp_project_id: vunewbie-adventure-works
+    location: asia-southeast1
+    dataset_name: human_resources   
+
+  default_table:
+    extract_conditions:
+      - [modified_date, ">=", replace_variable_key]
+    lookback: 86400                 
+    primary_keys: []                
+    cluster_keys: [modified_date]   
+
+tables:
+  - table_name: department
+    primary_keys: [department_id]
+
+  - table_name: employee
+    primary_keys: [business_entity_id]
+
+  - table_name: employee_department_history
+    primary_keys: [business_entity_id, department_id, shift_id, start_date]
+
+  - table_name: employee_pay_history
+    primary_keys: [business_entity_id, rate_change_date]
+
+  - table_name: job_candidate
+    primary_keys: [job_candidate_id]
+
+  - table_name: shift
+    primary_keys: [shift_id]

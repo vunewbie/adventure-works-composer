@@ -1,6 +1,7 @@
 # Airflow providers
 apache-airflow-providers-google==17.2.0
 apache-airflow-providers-postgres==6.3.0
+apache-airflow-providers-mysql==6.3.4
 
 # Data processing
 pandas==2.1.4

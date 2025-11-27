@@ -1,0 +1,62 @@
+general:
+  is_disabled: false
+  schedule_interval: "0 1 * * *"
+
+  source_configs:
+    source_type: mysql
+    conn_id: person
+    schema_name: person
+
+  gcp_configs:
+    gcp_conn_id: gcp
+    gcs_bucket_name: adventure-works-landing
+    gcp_project_id: vunewbie-adventure-works
+    location: asia-southeast1
+    dataset_name: person
+
+  default_table:
+    extract_conditions:
+      - [modified_date, ">=", replace_variable_key]
+    lookback: 86400
+    primary_keys: []
+    cluster_keys: [modified_date]
+
+tables:
+  - table_name: address
+    primary_keys: [address_id]
+
+  - table_name: address_type
+    primary_keys: [address_type_id]
+
+  - table_name: business_entity
+    primary_keys: [business_entity_id]
+
+  - table_name: business_entity_address
+    primary_keys: [business_entity_id, address_id, address_type_id]
+
+  - table_name: business_entity_contact
+    primary_keys: [business_entity_id, person_id, contact_type_id]
+
+  - table_name: contact_type
+    primary_keys: [contact_type_id]
+
+  - table_name: country_region
+    primary_keys: [country_region_code]
+
+  - table_name: email_address
+    primary_keys: [business_entity_id, email_address_id]
+
+  - table_name: password
+    primary_keys: [business_entity_id]
+
+  - table_name: person
+    primary_keys: [business_entity_id]
+
+  - table_name: person_phone
+    primary_keys: [business_entity_id, phone_number, phone_number_type_id]
+
+  - table_name: phone_number_type
+    primary_keys: [phone_number_type_id]
+
+  - table_name: state_province
+    primary_keys: [state_province_id]

@@ -1,0 +1,38 @@
+general:
+  is_disabled: false
+  schedule_interval: "0 3 * * *"
+
+  source_configs:
+    source_type: postgres
+    conn_id: adventureworks_purchasing
+    schema_name: purchasing
+
+  gcp_configs:
+    gcp_conn_id: gcp
+    gcs_bucket_name: adventure-works-landing
+    gcp_project_id: vunewbie-adventure-works
+    location: asia-southeast1
+    dataset_name: purchasing
+
+  default_table:
+    extract_conditions:
+      - [modified_date, ">=", replace_variable_key]
+    lookback: 86400
+    primary_keys: []
+    cluster_keys: [modified_date]
+
+tables:
+  - table_name: product_vendor
+    primary_keys: [product_id, business_entity_id]
+
+  - table_name: purchase_order_detail
+    primary_keys: [purchase_order_id, purchase_order_detail_id]
+
+  - table_name: purchase_order_header
+    primary_keys: [purchase_order_id]
+
+  - table_name: ship_method
+    primary_keys: [ship_method_id]
+
+  - table_name: vendor
+    primary_keys: [business_entity_id]
