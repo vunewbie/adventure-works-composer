@@ -2,8 +2,10 @@ FROM postgres:17
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        bash \
         python3 \
         python3-pip \
+        dos2unix \
     && pip3 install --no-cache-dir --break-system-packages "psycopg[binary]" \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -13,7 +15,7 @@ COPY init/ /init/
 RUN mkdir -p /docker-entrypoint-initdb.d
 COPY init/scripts/postgres/*.sql /docker-entrypoint-initdb.d/
 COPY init/scripts/postgres/*.sh /docker-entrypoint-initdb.d/
-RUN chmod +x /docker-entrypoint-initdb.d/*.sh
+RUN dos2unix /docker-entrypoint-initdb.d/*.sh && chmod +x /docker-entrypoint-initdb.d/*.sh
 
 RUN chmod -R 777 /init/data
 
