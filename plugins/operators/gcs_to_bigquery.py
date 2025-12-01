@@ -29,10 +29,6 @@ class GCSToBigQueryOperator(BaseGCSToBigQueryOperator):
         self.src_schema_name = src_schema_name
         self.src_table_name = src_table_name
         self.src_source_type = src_source_type
-        
-        if 'task_id' not in kwargs:
-            kwargs['task_id'] = 'load'
-        
         super().__init__(*args, **kwargs)
 
     def execute(self, context):

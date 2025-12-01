@@ -157,7 +157,6 @@ class BaseBuilder(LoggingMixin):
         # Create and execute GCSToBigQueryOperator
         # Schema will be fetched automatically if not provided
         GCSToBigQueryOperator(
-            task_id="load",
             gcp_conn_id=model.gcp_conn_id,
             bucket=model.gcs_bucket_name,
             source_objects=[self.gcs_file_name],  # Jinja template will be rendered
@@ -177,6 +176,7 @@ class BaseBuilder(LoggingMixin):
             src_schema_name=model.schema_name,
             src_table_name=model.table_name,
             src_source_type=model.source_type,
+            task_id="load",
         ).execute(context=context)
 
     def _init_dataset(self):
