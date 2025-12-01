@@ -1,4 +1,14 @@
 steps:
+  # Step 0: Install required Python package(s) for deploy_to_composer.py
+  - name: 'python:3.11'
+    id: 'setup-python-env'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        pip install --user google-cloud-storage==2.19.0
+        cp -r /root/.local /workspace/.local
+
   # Step 1: Install packages(Only when needed)
   # - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
   #   id: 'update-composer-packages'
