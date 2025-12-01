@@ -32,8 +32,7 @@ class GCSToBigQueryOperator(BaseGCSToBigQueryOperator):
         super().__init__(*args, **kwargs)
 
     def execute(self, context):
-        
-
+        self.render_template_fields(context)
         hook = GCSHook(gcp_conn_id=self.gcp_conn_id)
         client = storage.Client(credentials=hook.get_credentials())
         bucket = client.bucket(self.bucket)
