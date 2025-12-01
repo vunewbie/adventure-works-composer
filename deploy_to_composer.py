@@ -43,11 +43,11 @@ def upload_to_composer(directory: str, bucket_name: str, name_replacement: str) 
         try:
             blob = bucket.blob(file_gcs_path)
             blob.upload_from_filename(file)
-            print(f"✅ Uploaded {file} to gs://{bucket_name}/{file_gcs_path}")
+            print(f"Uploaded {file} to gs://{bucket_name}/{file_gcs_path}")
         except IsADirectoryError:
-            print(f"⚠️ Skipping directory: {file}")
+            print(f"Skipping directory: {file}")
         except FileNotFoundError:
-            print(f"❌ Error: {file} not found. Ensure directory structure is correct.")
+            print(f"Error: {file} not found. Ensure directory structure is correct.")
             raise
 
 
@@ -60,27 +60,27 @@ if __name__ == "__main__":
 
         args = parser.parse_args()
 
-        print(f"📁 DAGs directory: {args.dags_directory}")
-        print(f"🔌 Plugins directory: {args.plugins_directory}")
-        print(f"🪣 Composer bucket: {args.composer_bucket}")
+        print(f"DAGs directory: {args.dags_directory}")
+        print(f"Plugins directory: {args.plugins_directory}")
+        print(f"Composer bucket: {args.composer_bucket}")
 
         if args.dags_directory and os.path.exists(args.dags_directory):
-            print("🚀 Starting DAGs upload...")
+            print("Starting DAGs upload...")
             upload_to_composer(args.dags_directory, args.composer_bucket, "dags/")
-            print("✅ DAGs upload completed!")
+            print("DAGs upload completed!")
         else:
-            print(f"⚠️ Skipping DAGs upload: '{args.dags_directory}' directory not found.")
+            print(f"Skipping DAGs upload: '{args.dags_directory}' directory not found.")
 
         if args.plugins_directory and os.path.exists(args.plugins_directory):
-            print("🚀 Starting plugins upload...")
+            print("Starting plugins upload...")
             upload_to_composer(args.plugins_directory, args.composer_bucket, "plugins/")
-            print("✅ Plugins upload completed!")
+            print("Plugins upload completed!")
         else:
-            print(f"⚠️ Skipping plugins upload: '{args.plugins_directory}' directory not found.")
+            print(f"Skipping plugins upload: '{args.plugins_directory}' directory not found.")
 
-        print("🎉 Deployment completed!")
+        print("Deployment completed!")
     except Exception as e:
-        print(f"❌ Error during deployment: {str(e)}")
+        print(f"Error during deployment: {str(e)}")
         import traceback
         traceback.print_exc()
         exit(1)
