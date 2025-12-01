@@ -62,7 +62,7 @@ class MySQLConnection(LoggingMixin):
             schema_fields.append({
                 "name": col_name,
                 "type": bq_type,
-                "mode": "NULLABLE" if is_nullable == "YES" else "REQUIRED"
+                "mode": "NULLABLE"
             })
 
         # Add metadata column for tracking extraction timestamp
@@ -130,7 +130,7 @@ class PostgreSQLConnection(LoggingMixin):
             schema_fields.append({
                 "name": col_name,
                 "type": bq_type,
-                "mode": "NULLABLE" if is_nullable == "YES" else "REQUIRED"
+                "mode": "NULLABLE"
             })
         
         schema_fields.append({
