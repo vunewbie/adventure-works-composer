@@ -86,19 +86,41 @@ class MySQLToGCSOperator(LoggingMixin):
 
         schema_dict = {}
         column_names = []
+        time_column_indices = []  # Track which columns are TIME type
 
-        for col in self.cursor.description:
+        for idx, col in enumerate(self.cursor.description):
             col_name = col[0]
             column_names.append(col_name)
 
             type_code = col[1]
             mysql_type_name = type_code_to_name.get(type_code, "varchar")
             
+            # Track TIME columns to convert timedelta to string
+            if mysql_type_name == "time":
+                time_column_indices.append(idx)
+            
             # Convert MySQL type → Polars dtype name (string)
             polars_type_name = convert_mysql_to_polars(mysql_type_name)
             
             # Map string name → Polars DataType object
             schema_dict[col_name] = pl_dtype_lookup.get(polars_type_name, pl.Utf8)
+
+        # Convert TIME (timedelta) values to string format before creating DataFrame
+        if time_column_indices:
+            from datetime import timedelta
+            converted_rows = []
+            for row in rows:
+                converted_row = list(row)
+                for idx in time_column_indices:
+                    if isinstance(converted_row[idx], timedelta):
+                        # Convert timedelta to HH:MM:SS format
+                        total_seconds = int(converted_row[idx].total_seconds())
+                        hours = total_seconds // 3600
+                        minutes = (total_seconds % 3600) // 60
+                        seconds = total_seconds % 60
+                        converted_row[idx] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                converted_rows.append(tuple(converted_row))
+            rows = converted_rows
 
         self.log.info(
             "Extracted %s rows with %s columns: %s",
@@ -108,7 +130,7 @@ class MySQLToGCSOperator(LoggingMixin):
         )
         self.log.info("Schema mapping: %s", {k: str(v) for k, v in schema_dict.items()})
 
-        df = pl.DataFrame(rows, schema=schema_dict)
+        df = pl.DataFrame(rows, schema=schema_dict, orient="row")
 
         df = df.with_columns(
             pl.lit(datetime.now(timezone.utc)).alias("_extract_date_")

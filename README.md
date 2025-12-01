@@ -126,11 +126,13 @@ For example, for the `person.address` table:
 ### Examples
 - Airflow configuration overrides:
 ![airflow-configuration](airflow-configuration.png)
-- The secret manager will look like the following:
+- Secret managers
 ![secret-manager](secret-manager.png)
-- The CI/CD Process will look like the following:
+- Cloud build for CI/CD:
 ![CI-CD](CI-CD.png)
-- The Dags will look like the following:
+- Dags generated:
+![ELT_DAGS_EXAMPLES](elt_dags_examples.png)
+- GCS Bucket:
 ![ELT_DAGS_EXAMPLES](elt_dags_examples.png)
 
 
