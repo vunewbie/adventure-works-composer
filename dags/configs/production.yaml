@@ -1,10 +1,15 @@
 general:
-  is_disabled: false
-  schedule_interval: "0 2 * * *"
+  dag_configs:
+    schedule_interval: "0 2 * * *"
+    max_active_runs: 1
+    catchup: false
+    dagrun_timeout: 600
+    owner: "vunewbie"
+    retries: 0
 
   source_configs:
-    source_type: postgres
-    conn_id: adventureworks_production   # tuỳ bạn đặt trong Airflow
+    source_type: postgresql
+    conn_id: adventureworks_production
     schema_name: production
 
   gcp_configs:
@@ -15,6 +20,7 @@ general:
     dataset_name: production
 
   default_table:
+    is_disabled: false
     extract_conditions:
       - [modified_date, ">=", replace_variable_key]
     lookback: 86400

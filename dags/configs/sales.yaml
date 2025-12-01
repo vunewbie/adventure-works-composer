@@ -1,9 +1,14 @@
 general:
-  is_disabled: false
-  schedule_interval: "0 4 * * *"
+  dag_configs:
+    schedule_interval: "0 4 * * *"
+    max_active_runs: 1
+    catchup: false
+    dagrun_timeout: 600
+    owner: "vunewbie"
+    retries: 0
 
   source_configs:
-    source_type: postgres
+    source_type: postgresql
     conn_id: adventureworks_sales
     schema_name: sales
 
@@ -15,6 +20,7 @@ general:
     dataset_name: sales
 
   default_table:
+    is_disabled: false
     extract_conditions:
       - [modified_date, ">=", replace_variable_key]
     lookback: 86400

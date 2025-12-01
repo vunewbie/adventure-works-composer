@@ -1,6 +1,11 @@
 general:
-  is_disabled: false
-  schedule_interval: "0 0 * * *"
+  dag_configs:
+    schedule_interval: "0 0 * * *"
+    max_active_runs: 1
+    catchup: false
+    dagrun_timeout: 600
+    owner: "vunewbie"
+    retries: 0
 
   source_configs:
     source_type: mysql
@@ -15,6 +20,7 @@ general:
     dataset_name: human_resources   
 
   default_table:
+    is_disabled: false
     extract_conditions:
       - [modified_date, ">=", replace_variable_key]
     lookback: 86400                 
