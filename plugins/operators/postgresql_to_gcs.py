@@ -86,11 +86,25 @@ class PostgreSQLToGCSOperator(LoggingMixin):
             
             # Extract PostgreSQL type display (e.g., "integer", "varchar", "timestamp")
             type_display = (
-                col.type_display if hasattr(col, "type_display") else str(col[1])
+                col.type_display if hasattr(col, "type_display") else None
             )
             
             # Convert PostgreSQL type → Polars dtype name (string)
-            polars_type_name = convert_postgresql_to_polars(type_display)
+            if type_display:
+                polars_type_name = convert_postgresql_to_polars(type_display)
+            else:
+                # Fallback: infer type from Python object if type_display not available
+                from helpers.utils import infer_polars_type_from_python_value
+                if rows:
+                    # Get first non-null value for this column
+                    sample_value = None
+                    for row in rows:
+                        if row[idx] is not None:
+                            sample_value = row[idx]
+                            break
+                    polars_type_name = infer_polars_type_from_python_value(sample_value)
+                else:
+                    polars_type_name = "String"
             
             # Map string name → Polars DataType object and store in schema
             schema_dict[col_name] = pl_dtype_lookup.get(polars_type_name, pl.Utf8)
