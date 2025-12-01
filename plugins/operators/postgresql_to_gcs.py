@@ -1,4 +1,5 @@
 import polars as pl
+import re
 from datetime import datetime, timezone
 from tempfile import NamedTemporaryFile
 from typing import Any
@@ -9,7 +10,6 @@ from helpers.utils import convert_postgresql_to_polars
 
 class PostgreSQLToGCSOperator(LoggingMixin):
     """Extract data from PostgreSQL, convert to Polars DataFrame, and upload as Parquet to GCS."""
-
     def __init__(
         self, 
         dag_id,
@@ -49,14 +49,12 @@ class PostgreSQLToGCSOperator(LoggingMixin):
             self.log.info("Rendered GCS file name: %s", self.gcs_file_name)
         
         # Extract schema and table name from query for INFORMATION_SCHEMA lookup
-        # Query format: SELECT ... FROM schema.table WHERE ...
-        import re
         from_match = re.search(r'FROM\s+(\w+)\.(\w+)', self.query, re.IGNORECASE)
         if from_match:
             schema_name = from_match.group(1)
             table_name = from_match.group(2)
             
-            # Query INFORMATION_SCHEMA to get column types (most reliable)
+            # Query INFORMATION_SCHEMA to get column types
             type_query = """
                 SELECT COLUMN_NAME, DATA_TYPE
                 FROM INFORMATION_SCHEMA.COLUMNS
@@ -109,25 +107,18 @@ class PostgreSQLToGCSOperator(LoggingMixin):
             col_name = col.name if hasattr(col, "name") else col[0]
             column_names.append(col_name)
             
-            # Get PostgreSQL type: prefer INFORMATION_SCHEMA, then type_display, then fallback
+            # Get PostgreSQL type: prefer INFORMATION_SCHEM
             type_display = None
-            
-            # 1. Try INFORMATION_SCHEMA first (most reliable)
             if column_types and col_name in column_types:
                 type_display = column_types[col_name]
                 self.log.debug("Column %s: Using INFORMATION_SCHEMA type: %s", col_name, type_display)
             
-            # 2. Fallback to type_display attribute if available
-            elif hasattr(col, "type_display") and col.type_display:
-                type_display = col.type_display
-                self.log.debug("Column %s: Using type_display: %s", col_name, type_display)
-            
-            # 3. Convert PostgreSQL type → Polars dtype name (string)
+            # Convert PostgreSQL type → Polars dtype name (string)
             if type_display:
                 polars_type_name = convert_postgresql_to_polars(type_display)
                 self.log.debug("Column %s: Mapped %s -> %s", col_name, type_display, polars_type_name)
             else:
-                polars_type_name = "String"  # Default fallback
+                polars_type_name = "String"
                 self.log.warning("Column %s: No type information available, defaulting to String", col_name)
             
             # Map string name → Polars DataType object and store in schema

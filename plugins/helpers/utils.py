@@ -39,7 +39,6 @@ def convert_mysql_to_polars(source_type: str) -> str:
     
     return type_mapping.get(source_type, "String")
 
-
 def convert_postgresql_to_polars(source_type: str) -> str:
     """Convert PostgreSQL data type to Polars dtype"""
     type_mapping = {
@@ -83,7 +82,6 @@ def convert_postgresql_to_polars(source_type: str) -> str:
     
     return type_mapping.get(source_type, "String")
 
-
 def convert_polars_to_bq(polars_type: str) -> str:
     """Convert Polars dtype to BigQuery type"""
     type_mapping = {
@@ -105,7 +103,6 @@ def convert_polars_to_bq(polars_type: str) -> str:
     }
     
     return type_mapping.get(polars_type, "STRING")
-
 
 def get_hours_ago(hours_ago: int) -> str:
     lookback = datetime.now(timezone.utc) - timedelta(hours=hours_ago)

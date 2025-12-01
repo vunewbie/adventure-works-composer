@@ -7,7 +7,6 @@ class MySQLBuilder(BaseBuilder):
     Builder for MySQL → GCS → BigQuery ELT pipeline.
     Similar to PostgreSQLBuilder but uses MySQL-specific connections and operators.
     """
-
     @property
     def cursor(self):
         model = self.model

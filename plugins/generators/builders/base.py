@@ -112,7 +112,7 @@ class BaseBuilder(LoggingMixin):
                         f"{self.dag_id}_last_extraction", default_var=None
                     )
                     if replaced_value is None or replaced_value == "":
-                        # First run: variable doesn't exist, use epoch date to extract all data
+                        # First run
                         replaced_value = "1970-01-01 00:00:00"
                     
                     value = f"'{replaced_value}'"
@@ -142,12 +142,6 @@ class BaseBuilder(LoggingMixin):
         1. Check if source file exists in GCS
         2. Automatically fetch BigQuery schema from source database
         3. Load Parquet file to BigQuery staging table (dataset__pre_raw)
-        
-        Args:
-            context: Airflow execution context (optional).
-            
-        Returns:
-            None: Operator executes the load operation.
         """
         from operators.gcs_to_bigquery import GCSToBigQueryOperator
         
@@ -157,15 +151,14 @@ class BaseBuilder(LoggingMixin):
         destination_table = f"dataset__pre_raw.{model.dataset_name}__{model.table_name}"
         
         # Create and execute GCSToBigQueryOperator
-        # Schema will be fetched automatically if not provided
         GCSToBigQueryOperator(
             gcp_conn_id=model.gcp_conn_id,
             bucket=model.gcs_bucket_name,
-            source_objects=[self.gcs_file_name],  # Jinja template will be rendered
+            source_objects=[self.gcs_file_name],
             destination_project_dataset_table=destination_table,
             source_format="PARQUET",
             write_disposition="WRITE_APPEND",
-            schema_fields=None,  # Will be fetched automatically from source database
+            schema_fields=None,
             schema_update_options=["ALLOW_FIELD_ADDITION"],
             time_partitioning={
                 "field": "_extract_date_",
@@ -173,7 +166,6 @@ class BaseBuilder(LoggingMixin):
             },
             cluster_fields=model.primary_keys if model.primary_keys else None,
             location=model.location,
-            # Parameters for automatic schema fetching
             src_conn_id=model.conn_id,
             src_schema_name=model.schema_name,
             src_table_name=model.table_name,
@@ -277,7 +269,7 @@ class BaseBuilder(LoggingMixin):
         )
         
         # Build SQL components
-        # A) Extract condition: only recent data (2 hours)
+        # A) Extract condition: only recent data
         extract_condition_stm = (
             "_extract_date_ >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 2 HOUR)"
         )
@@ -362,15 +354,11 @@ class BaseBuilder(LoggingMixin):
         Queries the maximum value of the extraction field from raw table
         (within last 3 days) and subtracts lookback seconds.
         Sets Airflow Variable for next incremental extraction.
-        
-        Args:
-            context: Airflow execution context (optional).
         """
         model = self.model
         bq_hook = GCPConnection(connection_id=model.gcp_conn_id).get_bq_hook()
         
         # Get extraction field from first condition
-        # Note: Currently supports only 1 condition
         extracted_key = model.extract_conditions[0][0] if model.extract_conditions else None
         if not extracted_key:
             self.log.warning("No extract_conditions found, skipping last extraction time update.")
@@ -385,7 +373,6 @@ class BaseBuilder(LoggingMixin):
             self.log.info(f"Set last extraction time to 1 hour ago (no data extracted)")
             return
         
-        # Query last extraction from recent data (3 days)
         # Subtract lookback seconds from max timestamp
         condition_stm = (
             "DATE(`_extract_date_`) >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)"
@@ -415,9 +402,6 @@ class BaseBuilder(LoggingMixin):
     def build_dag(self):
         """
         Build DAG using TaskFlow API with extract -> load -> merge -> set_last_extracted tasks.
-        
-        Returns:
-            DAG: Airflow DAG instance with complete ELT pipeline.
         """        
         dag = DAG(**self._gen_dag_params())
 
