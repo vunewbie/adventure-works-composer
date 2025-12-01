@@ -80,6 +80,33 @@ class GCSToBigQueryOperator(BaseGCSToBigQueryOperator):
             
             self.log.info(f"Fetched schema with {len(self.schema_fields)} fields.")
 
+        # Filter out BYTES/BINARY types from cluster_fields (BigQuery doesn't support clustering on BYTES)
+        if self.cluster_fields:
+            # Create a mapping of field name to type from schema_fields
+            schema_type_map = {
+                field["name"]: field["type"]
+                for field in self.schema_fields
+            }
+            
+            # Filter out BYTES and BINARY types
+            original_cluster_fields = self.cluster_fields
+            self.cluster_fields = [
+                field for field in self.cluster_fields
+                if schema_type_map.get(field, "").upper() not in ["BYTES", "BINARY"]
+            ]
+            
+            if len(self.cluster_fields) != len(original_cluster_fields):
+                removed_fields = set(original_cluster_fields) - set(self.cluster_fields)
+                self.log.warning(
+                    f"Removed {removed_fields} from cluster_fields because BYTES/BINARY types "
+                    f"are not supported for clustering in BigQuery."
+                )
+            
+            # If no valid cluster fields remain, set to None
+            if not self.cluster_fields:
+                self.log.warning("No valid cluster_fields remaining after filtering BYTES/BINARY types. Clustering disabled.")
+                self.cluster_fields = None
+
         self.schema_fields = self.schema_fields
         return super().execute(context)
 

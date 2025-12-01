@@ -3,6 +3,7 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
+from urllib.parse import quote_plus
 from helpers.utils import convert_mysql_to_polars, convert_postgresql_to_polars, convert_polars_to_bq
 
 class MySQLConnection(LoggingMixin):
@@ -84,16 +85,21 @@ class PostgreSQLConnection(LoggingMixin):
     ):
         super().__init__()
         self.connection_id = connection_id
-        self.hook = PostgresHook(postgres_conn_id=connection_id)
+        self.cursor = self.get_cursor()
         self.log.info(f"Initialized PostgreSQL connection for {connection_id}")
 
-    @property
-    def conn(self):
-        return self.hook.get_conn()
-
-    @property
-    def cursor(self):
-        return self.conn.cursor()
+    def get_cursor(self):
+        
+        import psycopg
+        
+        hook = PostgresHook(postgres_conn_id=self.connection_id)
+        connection_info = hook.get_connection(self.connection_id)
+        
+        connection = psycopg.connect(
+            conninfo=rf"postgresql://{connection_info.login}:{quote_plus(connection_info.password)}@{connection_info.host}:{connection_info.port}/{connection_info.schema}"
+        )
+        
+        return connection.cursor()
 
     def get_source_table_columns(self, schema_name: str, table_name: str) -> list[str]:
         query = """
@@ -103,10 +109,8 @@ class PostgreSQLConnection(LoggingMixin):
             AND TABLE_NAME = %s
             ORDER BY ORDINAL_POSITION
         """
-        cursor = self.cursor
-        cursor.execute(query, (schema_name, table_name))
-        columns = [row[0] for row in cursor.fetchall()]
-        cursor.close()
+        self.cursor.execute(query, (schema_name, table_name))
+        columns = [row[0] for row in self.cursor.fetchall()]
         return columns
 
     def get_bigquery_schema(self, schema_name: str, table_name: str) -> list[dict]:
@@ -117,10 +121,8 @@ class PostgreSQLConnection(LoggingMixin):
             AND TABLE_NAME = %s
             ORDER BY ORDINAL_POSITION
         """
-        cursor = self.cursor
-        cursor.execute(query, (schema_name, table_name))
-        columns_info = cursor.fetchall()
-        cursor.close()
+        self.cursor.execute(query, (schema_name, table_name))
+        columns_info = self.cursor.fetchall()
         schema_fields = []
         for col_name, data_type, is_nullable in columns_info:
             polars_type = convert_postgresql_to_polars(data_type)
