@@ -3,6 +3,7 @@ from airflow.decorators import task
 from airflow.models import DAG, Variable
 from airflow.utils.dates import days_ago
 from airflow.utils.trigger_rule import TriggerRule
+from google.cloud import bigquery
 from airflow.operators.python import get_current_context
 from helpers.connection import GCPConnection, MySQLConnection, PostgreSQLConnection
 from helpers.utils import get_hours_ago
@@ -210,16 +211,28 @@ class BaseBuilder(LoggingMixin):
             ).get("fields", [])
             
             # Create raw table with schema, partitioning, and clustering
-            bq_hook.create_empty_table(
-                dataset_id=f"raw__{model.dataset_name}",
-                table_id=f"tbl__{model.table_name}",
-                schema_fields=pre_raw_schema_fields,
-                time_partitioning={
-                    "type": "DAY",
-                    "field": "_extract_date_",
-                },
-                cluster_fields=model.cluster_keys if model.cluster_keys else None,
+            client = bq_hook.get_client()
+            dataset_ref = bigquery.DatasetReference(
+                project=client.project,
+                dataset_id=f"raw__{model.dataset_name}"
             )
+            table_ref = dataset_ref.table(f"tbl__{model.table_name}")
+            
+            table = bigquery.Table(table_ref, schema=pre_raw_schema_fields)
+            
+            # Set time partitioning
+            table.time_partitioning = bigquery.TimePartitioning(
+                type_=bigquery.TimePartitioningType.DAY,
+                field="_extract_date_"
+            )
+            
+            # Set clustering if cluster_keys are provided
+            if model.cluster_keys:
+                table.clustering_fields = model.cluster_keys
+            
+            # Create table
+            table = client.create_table(table, exists_ok=True)
+            self.log.info(f"Created table {table.project}.{table.dataset_id}.{table.table_id}")
             
             # Mark as initialized
             Variable.set(f"{self.dag_id}_is_inited", "True")
