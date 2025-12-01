@@ -78,7 +78,6 @@ class MySQLToGCSOperator(LoggingMixin):
             pymysql.FIELD_TYPE.DATETIME: "datetime",
             pymysql.FIELD_TYPE.TIMESTAMP: "timestamp",
             pymysql.FIELD_TYPE.TIME: "time",
-            pymysql.FIELD_TYPE.TEXT: "text",
         }
 
         schema_dict = {}
