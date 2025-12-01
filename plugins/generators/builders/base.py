@@ -107,13 +107,13 @@ class BaseBuilder(LoggingMixin):
                 # Replace placeholder with last extraction timestamp
                 if value == "replace_variable_key":
                     replaced_value = Variable.get(
-                        f"{self.dag_id}_last_extraction", default_var=days_ago(1)
+                        f"{self.dag_id}_last_extraction", default_var=None
                     )
-                    value = (
-                        f"'{replaced_value}'"
-                        if replaced_value is not None
-                        else f"'{days_ago(1)}'"
-                    )
+                    if replaced_value is None or replaced_value == "":
+                        # First run: variable doesn't exist, use epoch date to extract all data
+                        replaced_value = "1970-01-01 00:00:00"
+                    
+                    value = f"'{replaced_value}'"
 
                 conditions.append(f"{key} {operator} {value}")
 
