@@ -2,6 +2,7 @@ import polars as pl
 import pymysql
 from datetime import datetime, timezone
 from tempfile import NamedTemporaryFile
+from airflow.templates import SandboxedEnvironment
 from typing import Any
 from airflow.models import Variable
 from airflow.utils.log.logging_mixin import LoggingMixin
@@ -30,6 +31,22 @@ class MySQLToGCSOperator(LoggingMixin):
         self.gcs_hook = gcs_hook
 
     def execute(self, context=None):
+        # Render Jinja template in gcs_file_name if context is provided
+        if context:
+            env = SandboxedEnvironment()
+            template = env.from_string(self.gcs_file_name)
+            # Pass context variables for template rendering
+            rendered = template.render(
+                data_interval_start=context.get("data_interval_start"),
+                data_interval_end=context.get("data_interval_end"),
+                ds=context.get("ds"),
+                ds_nodash=context.get("ds_nodash"),
+                ts=context.get("ts"),
+                **context
+            )
+            self.gcs_file_name = rendered
+            self.log.info("Rendered GCS file name: %s", self.gcs_file_name)
+        
         self.log.info("Executing extract query: %s", self.query)
         self.cursor.execute(self.query)
         rows = self.cursor.fetchall()
@@ -54,11 +71,6 @@ class MySQLToGCSOperator(LoggingMixin):
         }
 
         # Map MySQL type_code (integer) → MySQL type name (string)
-        # pymysql is required because:
-        # 1. MySqlHook uses pymysql as the underlying driver
-        # 2. cursor.description from pymysql returns type_code (integer) instead of type name
-        # 3. We need pymysql.FIELD_TYPE constants to map type_code → MySQL type name
-        # Example: type_code = 3 (pymysql.FIELD_TYPE.LONG) → "int"
         type_code_to_name = {
             pymysql.FIELD_TYPE.TINY: "tinyint",
             pymysql.FIELD_TYPE.SHORT: "smallint",

@@ -1,18 +1,18 @@
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import (
     GCSToBigQueryOperator as BaseGCSToBigQueryOperator,
 )
+from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from google.cloud import storage
 from airflow.exceptions import AirflowSkipException
-from airflow.utils.log.logging_mixin import LoggingMixin
-from helpers.connection import MySQLConnection, PostgreSQLConnection, GCPConnection
+from helpers.connection import MySQLConnection, PostgreSQLConnection
 
-class GCSToBigQueryOperator(BaseGCSToBigQueryOperator, LoggingMixin):
+class GCSToBigQueryOperator(BaseGCSToBigQueryOperator):
     """
     Custom GCSToBigQueryOperator that:
     1. Checks if source files exist in GCS before loading
     2. Automatically fetches BigQuery schema from source database if not provided
     3. Supports both MySQL and PostgreSQL sources
-    """  
+    """
     def __init__(
         self,
         schema_fields=None,
@@ -23,16 +23,6 @@ class GCSToBigQueryOperator(BaseGCSToBigQueryOperator, LoggingMixin):
         *args,
         **kwargs,
     ):
-        """
-        Initialize GCSToBigQueryOperator.
-        
-        Args:
-            schema_fields: BigQuery schema fields (optional, will be fetched if None).
-            src_conn_id: Source database connection ID.
-            src_schema_name: Source database schema name.
-            src_table_name: Source database table name.
-            src_source_type: Source database type ("mysql" or "postgresql").
-        """
         self.schema_fields = schema_fields
         self.src_conn_id = src_conn_id
         self.src_schema_name = src_schema_name
@@ -40,25 +30,11 @@ class GCSToBigQueryOperator(BaseGCSToBigQueryOperator, LoggingMixin):
         self.src_source_type = src_source_type
         super().__init__(*args, **kwargs)
 
-    def execute(self, context=None):
-        """
-        Execute GCS to BigQuery load with file existence check and dynamic schema fetching.
+    def execute(self, context):
         
-        Process:
-        1. Render Jinja templates in source_objects (if any)
-        2. Check if all source files exist in GCS bucket
-        3. If files don't exist, skip task (AirflowSkipException)
-        4. If schema_fields not provided, fetch from source database
-        5. Call parent execute() to perform the load
-        """
-        # Render Jinja templates in source_objects before checking file existence
-        # BaseGCSToBigQueryOperator has source_objects in template_fields
-        self.render_template_fields(context)
-        
-        # Check if all source files exist in GCS using GCPConnection
-        gcp_connection = GCPConnection(connection_id=self.gcp_conn_id)
-        gcs_hook = gcp_connection.get_gcs_hook()
-        client = storage.Client(credentials=gcs_hook.get_credentials())
+
+        hook = GCSHook(gcp_conn_id=self.gcp_conn_id)
+        client = storage.Client(credentials=hook.get_credentials())
         bucket = client.bucket(self.bucket)
 
         for source_object in self.source_objects:
@@ -104,6 +80,6 @@ class GCSToBigQueryOperator(BaseGCSToBigQueryOperator, LoggingMixin):
             
             self.log.info(f"Fetched schema with {len(self.schema_fields)} fields.")
 
-        # Call parent execute() to perform the actual load
+        self.schema_fields = self.schema_fields
         return super().execute(context)
 

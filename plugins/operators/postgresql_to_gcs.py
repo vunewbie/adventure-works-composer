@@ -4,6 +4,7 @@ from tempfile import NamedTemporaryFile
 from typing import Any
 from airflow.models import Variable
 from airflow.utils.log.logging_mixin import LoggingMixin
+from airflow.templates import SandboxedEnvironment
 from helpers.utils import convert_postgresql_to_polars
 
 class PostgreSQLToGCSOperator(LoggingMixin):
@@ -39,6 +40,22 @@ class PostgreSQLToGCSOperator(LoggingMixin):
         7. Upload Parquet bytes to GCS
         8. Set Airflow Variable to track if data is empty
         """
+        # Render Jinja template in gcs_file_name if context is provided
+        if context:
+            env = SandboxedEnvironment()
+            template = env.from_string(self.gcs_file_name)
+            # Pass context variables for template rendering
+            rendered = template.render(
+                data_interval_start=context.get("data_interval_start"),
+                data_interval_end=context.get("data_interval_end"),
+                ds=context.get("ds"),
+                ds_nodash=context.get("ds_nodash"),
+                ts=context.get("ts"),
+                **context
+            )
+            self.gcs_file_name = rendered
+            self.log.info("Rendered GCS file name: %s", self.gcs_file_name)
+        
         # Execute query and fetch all rows
         self.log.info("Executing extract query: %s", self.query)
         self.cursor.execute(self.query)

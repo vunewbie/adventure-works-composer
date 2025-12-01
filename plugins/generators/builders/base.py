@@ -157,6 +157,7 @@ class BaseBuilder(LoggingMixin):
         # Create and execute GCSToBigQueryOperator
         # Schema will be fetched automatically if not provided
         GCSToBigQueryOperator(
+            task_id="load",
             gcp_conn_id=model.gcp_conn_id,
             bucket=model.gcs_bucket_name,
             source_objects=[self.gcs_file_name],  # Jinja template will be rendered
