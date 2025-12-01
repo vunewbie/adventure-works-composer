@@ -1,9 +1,9 @@
 steps:
   # Step 1: Install Python dependencies for deployment script(first time only)
-  - name: 'python'
-    entrypoint: pip
-    args: ["install", "-r", "requirements.txt", "--user"]
-    id: 'install-deps'
+  # - name: 'python'
+  #   entrypoint: pip
+  #   args: ["install", "-r", "requirements.txt", "--user"]
+  #   id: 'install-deps'
 
   # Step 2: Upload DAGs to Composer bucket
   - name: 'python'

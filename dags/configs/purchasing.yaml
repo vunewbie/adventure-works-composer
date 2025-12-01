@@ -9,7 +9,7 @@ general:
 
   source_configs:
     source_type: postgresql
-    conn_id: adventureworks_purchasing
+    conn_id: purchasing
     schema_name: purchasing
 
   gcp_configs:

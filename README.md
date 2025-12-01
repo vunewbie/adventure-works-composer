@@ -62,7 +62,7 @@ This project requires the following Airflow Connections to be configured:
 
 #### PostgreSQL Connections
 
-1. **`adventureworks_sales`** - Connection to PostgreSQL database for `sales` schema
+1. **`sales`** - Connection to PostgreSQL database for `sales` schema
    - **Connection Type**: Postgres
    - **Host**: PostgreSQL server hostname or IP
    - **Schema**: `sales`
@@ -70,7 +70,7 @@ This project requires the following Airflow Connections to be configured:
    - **Password**: PostgreSQL password
    - **Port**: 5432 (default)
 
-2. **`adventureworks_production`** - Connection to PostgreSQL database for `production` schema
+2. **`production`** - Connection to PostgreSQL database for `production` schema
    - **Connection Type**: Postgres
    - **Host**: PostgreSQL server hostname or IP
    - **Schema**: `production`
@@ -78,7 +78,7 @@ This project requires the following Airflow Connections to be configured:
    - **Password**: PostgreSQL password
    - **Port**: 5432 (default)
 
-3. **`adventureworks_purchasing`** - Connection to PostgreSQL database for `purchasing` schema
+3. **`purchasing`** - Connection to PostgreSQL database for `purchasing` schema
    - **Connection Type**: Postgres
    - **Host**: PostgreSQL server hostname or IP
    - **Schema**: `purchasing`
