@@ -1,52 +1,39 @@
 steps:
-  # Step 1: Ensure gcloud Composer component is available
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args:
-      - 'components'
-      - 'install'
-      - 'composer'
-      - '--quiet'
-    id: 'install-gcloud'
-
-  # Step 2: Update Composer environment with Python packages from requirements.txt
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args:
-      - 'composer'
-      - 'environments'
-      - 'update'
-      - '${_COMPOSER_ENVIRONMENT}'
-      - '--location=${_COMPOSER_LOCATION}'
-      - '--update-pypi-packages-from-file=requirements.txt'
+  # Step 1: Cài Python packages cho Composer từ requirements.txt
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     id: 'update-composer-packages'
-    waitFor: ['install-gcloud']
+    entrypoint: gcloud
+    args:
+      - composer
+      - environments
+      - update
+      - ${_COMPOSER_ENVIRONMENT}
+      - --location=${_COMPOSER_LOCATION}
+      - --update-pypi-packages-from-file=requirements.txt
 
-  # Step 3: Install google-cloud-storage and upload DAGs to Composer bucket
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  # Step 2: Upload DAGs lên Composer bucket
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    id: 'upload-dags'
     entrypoint: bash
     args:
-      - '-c'
+      - -c
       - |
-        pip install google-cloud-storage==2.19.0 --user &&
+        python -m pip install --user google-cloud-storage==2.19.0 && \
         python deploy_to_composer.py \
           --dags_directory=${_DAGS_DIRECTORY} \
           --composer_bucket=${_COMPOSER_BUCKET}
-    id: 'upload-dags'
-    waitFor: ['update-composer-packages']
 
-  # Step 4: Upload plugins to Composer bucket
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  # Step 3: Upload plugins lên Composer bucket
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    id: 'upload-plugins'
     entrypoint: bash
     args:
-      - '-c'
+      - -c
       - |
-        pip install google-cloud-storage==2.19.0 --user &&
+        python -m pip install --user google-cloud-storage==2.19.0 && \
         python deploy_to_composer.py \
           --plugins_directory=${_PLUGINS_DIRECTORY} \
           --composer_bucket=${_COMPOSER_BUCKET}
-    id: 'upload-plugins'
-    waitFor: ['update-composer-packages']
 
 options:
   logging: CLOUD_LOGGING_ONLY
