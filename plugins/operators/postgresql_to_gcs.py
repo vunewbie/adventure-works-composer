@@ -48,6 +48,31 @@ class PostgreSQLToGCSOperator(LoggingMixin):
             self.gcs_file_name = rendered
             self.log.info("Rendered GCS file name: %s", self.gcs_file_name)
         
+        # Extract schema and table name from query for INFORMATION_SCHEMA lookup
+        # Query format: SELECT ... FROM schema.table WHERE ...
+        import re
+        from_match = re.search(r'FROM\s+(\w+)\.(\w+)', self.query, re.IGNORECASE)
+        if from_match:
+            schema_name = from_match.group(1)
+            table_name = from_match.group(2)
+            
+            # Query INFORMATION_SCHEMA to get column types (most reliable)
+            type_query = """
+                SELECT COLUMN_NAME, DATA_TYPE
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = %s
+                AND TABLE_NAME = %s
+                ORDER BY ORDINAL_POSITION
+            """
+            type_cursor = self.cursor.connection.cursor()
+            type_cursor.execute(type_query, (schema_name, table_name))
+            column_types = {row[0]: row[1] for row in type_cursor.fetchall()}
+            type_cursor.close()
+            self.log.info("Fetched column types from INFORMATION_SCHEMA: %s", column_types)
+        else:
+            column_types = {}
+            self.log.warning("Could not extract schema.table from query, will use type_display or fallback")
+        
         # Execute query and fetch all rows
         self.log.info("Executing extract query: %s", self.query)
         self.cursor.execute(self.query)
@@ -84,27 +109,26 @@ class PostgreSQLToGCSOperator(LoggingMixin):
             col_name = col.name if hasattr(col, "name") else col[0]
             column_names.append(col_name)
             
-            # Extract PostgreSQL type display (e.g., "integer", "varchar", "timestamp")
-            type_display = (
-                col.type_display if hasattr(col, "type_display") else None
-            )
+            # Get PostgreSQL type: prefer INFORMATION_SCHEMA, then type_display, then fallback
+            type_display = None
             
-            # Convert PostgreSQL type → Polars dtype name (string)
+            # 1. Try INFORMATION_SCHEMA first (most reliable)
+            if column_types and col_name in column_types:
+                type_display = column_types[col_name]
+                self.log.debug("Column %s: Using INFORMATION_SCHEMA type: %s", col_name, type_display)
+            
+            # 2. Fallback to type_display attribute if available
+            elif hasattr(col, "type_display") and col.type_display:
+                type_display = col.type_display
+                self.log.debug("Column %s: Using type_display: %s", col_name, type_display)
+            
+            # 3. Convert PostgreSQL type → Polars dtype name (string)
             if type_display:
                 polars_type_name = convert_postgresql_to_polars(type_display)
+                self.log.debug("Column %s: Mapped %s -> %s", col_name, type_display, polars_type_name)
             else:
-                # Fallback: infer type from Python object if type_display not available
-                from helpers.utils import infer_polars_type_from_python_value
-                if rows:
-                    # Get first non-null value for this column
-                    sample_value = None
-                    for row in rows:
-                        if row[idx] is not None:
-                            sample_value = row[idx]
-                            break
-                    polars_type_name = infer_polars_type_from_python_value(sample_value)
-                else:
-                    polars_type_name = "String"
+                polars_type_name = "String"  # Default fallback
+                self.log.warning("Column %s: No type information available, defaulting to String", col_name)
             
             # Map string name → Polars DataType object and store in schema
             schema_dict[col_name] = pl_dtype_lookup.get(polars_type_name, pl.Utf8)

@@ -107,38 +107,6 @@ def convert_polars_to_bq(polars_type: str) -> str:
     return type_mapping.get(polars_type, "STRING")
 
 
-def infer_polars_type_from_python_value(value) -> str:
-    """
-    Infer Polars dtype from Python value type.
-    Used as fallback when database type_display is not available.
-    """
-    import numbers
-    from datetime import date, datetime as dt
-    
-    if value is None:
-        return "String"  # Default to String for None values
-    elif isinstance(value, bool):
-        return "Boolean"
-    elif isinstance(value, numbers.Integral):
-        # Check if it's int32 or int64 range
-        if -2147483648 <= value <= 2147483647:
-            return "Int32"
-        else:
-            return "Int64"
-    elif isinstance(value, numbers.Real) and not isinstance(value, numbers.Integral):
-        return "Float64"
-    elif isinstance(value, date) and not isinstance(value, dt):
-        return "Date"
-    elif isinstance(value, dt):
-        return "Datetime"
-    elif isinstance(value, str):
-        return "String"
-    elif isinstance(value, bytes):
-        return "Binary"
-    else:
-        return "String"  # Default fallback
-
-
 def get_hours_ago(hours_ago: int) -> str:
     lookback = datetime.now(timezone.utc) - timedelta(hours=hours_ago)
     return lookback.strftime("%Y-%m-%d %H:%M:%S")
