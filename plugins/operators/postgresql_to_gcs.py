@@ -77,8 +77,9 @@ class PostgreSQLToGCSOperator(LoggingMixin):
         # Build schema dict: {column_name: pl.DataType}
         schema_dict = {}
         column_names = []
+        string_column_indices = []  # Track columns that should be strings
         
-        for col in self.cursor.description:
+        for idx, col in enumerate(self.cursor.description):
             # Extract column name
             col_name = col.name if hasattr(col, "name") else col[0]
             column_names.append(col_name)
@@ -93,6 +94,27 @@ class PostgreSQLToGCSOperator(LoggingMixin):
             
             # Map string name → Polars DataType object and store in schema
             schema_dict[col_name] = pl_dtype_lookup.get(polars_type_name, pl.Utf8)
+            
+            # Track columns that are mapped to String but might have Python objects
+            if polars_type_name == "String":
+                string_column_indices.append(idx)
+        
+        # Convert Python date/integer objects to string if schema is String
+        if string_column_indices and rows:
+            from datetime import date, datetime as dt
+            converted_rows = []
+            for row in rows:
+                converted_row = list(row)
+                for idx in string_column_indices:
+                    value = converted_row[idx]
+                    # Convert date/datetime objects to string
+                    if isinstance(value, (date, dt)):
+                        converted_row[idx] = value.isoformat() if hasattr(value, 'isoformat') else str(value)
+                    # Convert other non-string types to string
+                    elif value is not None and not isinstance(value, str):
+                        converted_row[idx] = str(value)
+                converted_rows.append(tuple(converted_row))
+            rows = converted_rows
         
         self.log.info(
             "Extracted %s rows with %s columns: %s", 
@@ -101,9 +123,9 @@ class PostgreSQLToGCSOperator(LoggingMixin):
             column_names
         )
         self.log.info("Schema mapping: %s", {k: str(v) for k, v in schema_dict.items()})
-        
+
         # Create Polars DataFrame with predefined schema
-        df = pl.DataFrame(rows, schema=schema_dict)
+        df = pl.DataFrame(rows, schema=schema_dict, orient="row")
         
         # Add metadata column _extract_date_ for tracking extraction timestamp
         df = df.with_columns(
