@@ -3,6 +3,7 @@ from airflow.decorators import task
 from airflow.models import DAG, Variable
 from airflow.utils.dates import days_ago
 from airflow.utils.trigger_rule import TriggerRule
+from airflow.operators.python import get_current_context
 from helpers.connection import GCPConnection, MySQLConnection, PostgreSQLConnection
 from helpers.utils import get_hours_ago
 
@@ -409,19 +410,19 @@ class BaseBuilder(LoggingMixin):
 
         # Extract task: source database → GCS
         @task(dag=dag, task_id="extract")
-        def extract_task(context=None):
+        def extract_task(**context):
             """Extract data from source to GCS."""
             return self._get_extract_task(context=context)
         
         # Load task: GCS → BigQuery pre_raw
         @task(dag=dag, task_id="load")
-        def load_task(context=None):
+        def load_task(**context):
             """Load data from GCS to BigQuery pre_raw layer."""
             return self._get_load_task(context=context)
         
         # Merge task: pre_raw → raw (deduplication and upsert)
         @task(dag=dag, task_id="merge")
-        def merge_task(context=None):
+        def merge_task(**context):
             """Merge data from pre_raw to raw layer with deduplication."""
             return self._get_merge_task(context=context)
         
@@ -432,7 +433,7 @@ class BaseBuilder(LoggingMixin):
                 task_id="set_last_extracted",
                 trigger_rule=TriggerRule.NONE_FAILED,
             )
-            def set_last_extracted_task(context=None):
+            def set_last_extracted_task(**context):
                 """Update last extraction timestamp for incremental loading."""
                 return self._set_last_extracted_time(context=context)
             
