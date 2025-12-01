@@ -23,10 +23,11 @@ class MySQLToGCSOperator(BaseOperator, LoggingMixin):
         gcs_bucket_name: str,
         gcs_file_name: str,
         gcs_hook: Any,
+        task_id: str = "extract",
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(task_id=task_id, *args, **kwargs)
         self.dag_id = dag_id
         self.cursor = cursor
         self.query = query

@@ -122,4 +122,15 @@ For example, for the `person.address` table:
   - `elt__person__address_last_extraction`
   - `elt__person__address_tempo_empty`
   - `elt__person__address_is_inited`
+```
+### Examples
+- Airflow configuration overrides:
+![airflow-configuration](airflow-configuration.png)
+- The secret manager will look like the following:
+![secret-manager](secret-manager.png)
+- The CI/CD Process will look like the following:
+![CI-CD](CI-CD.png)
+- The Dags will look like the following:
+![ELT_DAGS_EXAMPLES](elt_dags_examples.png)
+
 

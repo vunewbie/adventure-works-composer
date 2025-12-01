@@ -18,11 +18,12 @@ class PostgreSQLToGCSOperator(BaseOperator, LoggingMixin):
         query, 
         gcs_bucket_name, 
         gcs_file_name, 
-        gcs_hook, 
+        gcs_hook,
+        task_id: str = "extract",
         *args, 
         **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(task_id=task_id, *args, **kwargs)
         self.dag_id = dag_id
         self.cursor = cursor
         self.query = query
