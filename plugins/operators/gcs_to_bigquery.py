@@ -23,11 +23,16 @@ class GCSToBigQueryOperator(BaseGCSToBigQueryOperator):
         *args,
         **kwargs,
     ):
+        # Store custom parameters before calling super
         self.schema_fields = schema_fields
         self.src_conn_id = src_conn_id
         self.src_schema_name = src_schema_name
         self.src_table_name = src_table_name
         self.src_source_type = src_source_type
+        
+        if 'task_id' not in kwargs:
+            kwargs['task_id'] = 'load'
+        
         super().__init__(*args, **kwargs)
 
     def execute(self, context):
