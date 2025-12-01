@@ -123,16 +123,23 @@ For example, for the `person.address` table:
   - `elt__person__address_tempo_empty`
   - `elt__person__address_is_inited`
 ```
-### Examples
+### Example Guide
+- Service account:
+![service-account](./guide/service-account.png)
 - Airflow configuration overrides:
-![airflow-configuration](airflow-configuration.png)
+![airflow-configuration](./guide/airflow-configuration-overrides.png)
+- GCS buckets:
+![gcs-buckets](./guide/gcs-buckets.png)
 - Secret managers
-![secret-manager](secret-manager.png)
+![secret-manager](./guide/secret-manager.png)
 - Cloud build for CI/CD:
-![CI-CD](CI-CD.png)
+![cloud-build-for-ci-cd](./guide/cloud-build-for-ci-cd.png)
 - Dags generated:
-![ELT_DAGS_EXAMPLES](elt_dags_examples.png)
-- GCS Bucket:
-![ELT_DAGS_EXAMPLES](elt_dags_examples.png)
-
+![dags_generated](./guide/dags_generated.png)
+- Landing layer:
+![landing-layer](./guide/landing-layer.png)
+- Big Query Pre-raw dataset:
+![big-query-pre-raw-dataset](./guide/big-query-pre-raw-dataset.png)
+- Big Query raw dataset:
+![big-query-raw-dataset](./guide/big-query-raw-dataset.png)
 
