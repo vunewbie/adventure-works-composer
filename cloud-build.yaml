@@ -50,6 +50,6 @@ options:
 substitutions:
   _DAGS_DIRECTORY: "dags/"
   _PLUGINS_DIRECTORY: "plugins/"
-  _COMPOSER_BUCKET: "asia-southeast1-adventure-works-landing"
+  _COMPOSER_BUCKET: "adventure-works-landing"
   _COMPOSER_ENVIRONMENT: "vunewbie-adventure-works"
   _COMPOSER_LOCATION: "asia-southeast1"
