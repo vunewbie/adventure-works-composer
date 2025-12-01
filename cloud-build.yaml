@@ -1,39 +1,35 @@
 steps:
-  # Step 1: Cài Python packages cho Composer từ requirements.txt
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
-    id: 'update-composer-packages'
-    entrypoint: gcloud
-    args:
-      - composer
-      - environments
-      - update
-      - ${_COMPOSER_ENVIRONMENT}
-      - --location=${_COMPOSER_LOCATION}
-      - --update-pypi-packages-from-file=requirements.txt
+  # Step 1: Install packages(Only when needed)
+  # - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+  #   id: 'update-composer-packages'
+  #   entrypoint: gcloud
+  #   args:
+  #     - composer
+  #     - environments
+  #     - update
+  #     - ${_COMPOSER_ENVIRONMENT}
+  #     - --location=${_COMPOSER_LOCATION}
+  #     - --update-pypi-packages-from-file=requirements.txt
 
-  # Step 2: Upload DAGs lên Composer bucket
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+  # Step 2: Upload dags/ folder
+  - name: 'python'
+    entrypoint: python
+    args:
+      - "deploy_to_composer.py"
+      - "--dags_directory=${_DAGS_DIRECTORY}"
+      - "--composer_bucket=${_COMPOSER_BUCKET}"
     id: 'upload-dags'
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        python -m pip install --user google-cloud-storage==2.19.0 && \
-        python deploy_to_composer.py \
-          --dags_directory=${_DAGS_DIRECTORY} \
-          --composer_bucket=${_COMPOSER_BUCKET}
+    # waitFor: ['update-composer-packages']
 
-  # Step 3: Upload plugins lên Composer bucket
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
-    id: 'upload-plugins'
-    entrypoint: bash
+  # Step 3: Upload plugins folders
+  - name: 'python'
+    entrypoint: python
     args:
-      - -c
-      - |
-        python -m pip install --user google-cloud-storage==2.19.0 && \
-        python deploy_to_composer.py \
-          --plugins_directory=${_PLUGINS_DIRECTORY} \
-          --composer_bucket=${_COMPOSER_BUCKET}
+      - "deploy_to_composer.py"
+      - "--plugins_directory=${_PLUGINS_DIRECTORY}"
+      - "--composer_bucket=${_COMPOSER_BUCKET}"
+    id: 'upload-plugins'
+    # waitFor: ['update-composer-packages']
 
 options:
   logging: CLOUD_LOGGING_ONLY
