@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from tempfile import NamedTemporaryFile
 from typing import Any
 from airflow.models import Variable
-from airflow.utils.helpers import render_template
 from airflow.utils.log.logging_mixin import LoggingMixin
+from airflow.templates import SandboxedEnvironment
 from helpers.utils import convert_mysql_to_polars
 
 class MySQLToGCSOperator(LoggingMixin):
@@ -33,7 +33,10 @@ class MySQLToGCSOperator(LoggingMixin):
     def execute(self, context=None):
         # Render Jinja template in gcs_file_name if context is provided
         if context:
-            self.gcs_file_name = render_template(self.gcs_file_name, context)
+            env = SandboxedEnvironment()
+            template = env.from_string(self.gcs_file_name)
+            rendered = template.render(**context)
+            self.gcs_file_name = rendered
             self.log.info("Rendered GCS file name: %s", self.gcs_file_name)
         
         self.log.info("Executing extract query: %s", self.query)
