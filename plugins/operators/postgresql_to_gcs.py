@@ -2,14 +2,12 @@ import polars as pl
 from datetime import datetime, timezone
 from tempfile import NamedTemporaryFile
 from typing import Any
-from airflow.models import BaseOperator, Variable
+from airflow.models import Variable
 from airflow.utils.log.logging_mixin import LoggingMixin
 from helpers.utils import convert_postgresql_to_polars
 
-class PostgreSQLToGCSOperator(BaseOperator, LoggingMixin):
+class PostgreSQLToGCSOperator(LoggingMixin):
     """Extract data from PostgreSQL, convert to Polars DataFrame, and upload as Parquet to GCS."""
-    
-    template_fields = ("query", "gcs_bucket_name", "gcs_file_name")
 
     def __init__(
         self, 
@@ -19,11 +17,7 @@ class PostgreSQLToGCSOperator(BaseOperator, LoggingMixin):
         gcs_bucket_name, 
         gcs_file_name, 
         gcs_hook,
-        task_id: str = "extract",
-        *args, 
-        **kwargs
     ):
-        super().__init__(task_id=task_id, *args, **kwargs)
         self.dag_id = dag_id
         self.cursor = cursor
         self.query = query

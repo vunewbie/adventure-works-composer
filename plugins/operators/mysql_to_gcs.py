@@ -3,17 +3,15 @@ import pymysql
 from datetime import datetime, timezone
 from tempfile import NamedTemporaryFile
 from typing import Any
-from airflow.models import BaseOperator, Variable
+from airflow.models import Variable
 from airflow.utils.log.logging_mixin import LoggingMixin
 from helpers.utils import convert_mysql_to_polars
 
-class MySQLToGCSOperator(BaseOperator, LoggingMixin):
+class MySQLToGCSOperator(LoggingMixin):
     """
     Extract data from MySQL, convert to Polars DataFrame, and upload as Parquet to GCS.
     Similar to PostgreSQLToGCSOperator but uses MySQL-specific type mapping.
     """
-    
-    template_fields = ("query", "gcs_bucket_name", "gcs_file_name")
 
     def __init__(
         self,
@@ -23,11 +21,7 @@ class MySQLToGCSOperator(BaseOperator, LoggingMixin):
         gcs_bucket_name: str,
         gcs_file_name: str,
         gcs_hook: Any,
-        task_id: str = "extract",
-        *args,
-        **kwargs,
     ):
-        super().__init__(task_id=task_id, *args, **kwargs)
         self.dag_id = dag_id
         self.cursor = cursor
         self.query = query
